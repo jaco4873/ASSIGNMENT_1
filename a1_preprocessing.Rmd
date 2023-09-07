@@ -20,6 +20,7 @@ knit: (function(inputFile, encoding) {
 bibliography: '../../varia/bibliography.bib'
 ---
 
+I am trying out an edit!
 
 The objective of this warm-up assignment is to brush up your programming and data wrangling skills as well as to introduce you to the data set you will be working on in Assignment 1. More precisely, you will here be asked here to do the following:
 
