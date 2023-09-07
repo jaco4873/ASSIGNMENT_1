@@ -72,9 +72,11 @@ Your job in this assignment is to double-check the data and make it analysis-rea
 If you have created a Rstudio project for this assignment, the working directory for this assignment (the default path for any function, procedure or command that works on files) is the project directory. If you have decided otherwise, first make sure that you set your working directory to the path of the current RMarkdown file. You can also use the following code chunk to install and/or load the packages you will need for the tasks below.
 
 ```{r setup}
-### Write your code here
-
-
+library(janitor)
+library(dplyr)
+library(stringr)
+library(flextable)
+library(dlookr)
 ```
 
 Load the following three data sets, after downloading them from dropbox and saving them in your working directory:
@@ -84,9 +86,12 @@ Load the following three data sets, after downloading them from dropbox and savi
 - [Word data](https://www.dropbox.com/scl/fi/h4dop19ctdubhokbfsn2q/token_train.csv?rlkey=wffzcf1211bglrx8239g3e0h8&dl=0)
 
 ```{r import_datasets, message = FALSE}
-### Write your code here
+setwd("/Users/jacoblillelund/Documents/methods-3/ASSIGNMENT_1") # Set WD
 
-
+#### Read files
+token_train <- read_csv("token_train.csv")
+LU_train <- read_csv("LU_train.csv")
+demo_train <- read_csv("demo_train.csv")
 ```
 
 Using various visualisation and aggregation procedures, explore these data sets and try to compare them to each other and draw parallel. You'll quickly notice that this is not an easy task. This is in part due to the fact that the different data sets were built by different researchers at different points in time. In particular, you'll find out that: 
@@ -111,8 +116,11 @@ Many different procedures can be used here, and unless you have to deal with gig
 
 
 ```{r rename_variables}
-### Write your code here
+demo_train <- clean_names(demo_train) # clean names using janitor
+LU_train <- clean_names(LU_train) # clean names using janitor
+token_train <- clean_names(token_train) # clean names using janitor
 
+demo_train <- rename(demo_train, subj = child_id) # rename cols as appropriate
 
 ```
 
@@ -122,9 +130,11 @@ Find a way to homogenize the way "visit" is reported amongst the different datas
 
 
 ```{r extract_digits}
-### Write your code here
+LU_train$visit <- str_extract(LU_train$visit, '\\d') # Extract the first digit
+LU_train$visit <- as.numeric(LU_train$visit)
 
-
+token_train$visit <- str_extract(token_train$visit, '\\d') # Extract the first digit
+token_train$visit <- as.numeric(token_train$visit)
 ```
 
 A similar task needs to be done regarding the value names of the Child.ID variable in the demographic data set. The values of this variable that are not abbreviated do not end with "." (i.e. Adam), whereas they do in the other two data sets (i.e. Adam.). Key merges, that is, merging of data sets based on shared variables, can only be done is the latter have overlapping value names; if no identical value names can be found, nothing will be merged. In the present case, a simple way to ensure this consists in removing all points from the values of the corresponding variables. The package **stringr** can again be of help here, notably the function **str_replace_all()**.
@@ -133,9 +143,10 @@ A similar task needs to be done regarding the value names of the Child.ID variab
 
 
 ```{r remove_points}
-### Write your code here
-
-
+# Use str_replace_all to remove all dots from the column
+demo_train$subj <- str_replace_all(demo_train$subj, "\\.", "")
+LU_train$subj <- str_replace_all(LU_train$subj, "\\.", "")
+token_train$subj <- str_replace_all(token_train$subj, "\\.", "")
 ```
 
 
@@ -175,8 +186,10 @@ Most variables names should make sense, that is, should be straightforward as re
 Feel free to rename the variables into something you think is more intuitive (i.e. *nonVerbalIQ*, *verbalIQ*)
 
 ```{r rename_selected_variables}
-### Write your code here
-
+# Select relevant columns
+demo_train <- demo_train %>% select(1:4, 7, 9, 14, 22, 24, 33) 
+LU_train <- LU_train %>% select(subj,visit,mot_mlu,chi_mlu)
+token_train <- token_train %>% select(1:4,6:7)
 
 ```
 
@@ -190,9 +203,18 @@ It is important here to check if merging the data sets:
 - has resulted in the creation of NAs within the merged data set. If this is so, it is important to understand why these NAs were created (e.g. some measures were not taken at all visits, some recordings were lost or permission to use was withdrawn).
 
 ```{r merge_data}
-### Write your code here
+# Left join demo_train with LU_train on subj and visit
+merged_data <- demo_train %>%
+  left_join(LU_train, by = c("subj", "visit"))
 
+# Left join the merged_data with token_train on subj and visit
+merged_data_final <- merged_data %>%
+  left_join(token_train, by = c("subj", "visit"))
 
+# Check dataframe 
+diagnose(merged_data_final) # check missing values on the final table
+diagnose(demo_train) # compare with missing values on original demo_train - equal number of NA/s.
+  # there are 20 less rows in LU_train and token_train datasets
 ```
 
 **6. Data filtering**
