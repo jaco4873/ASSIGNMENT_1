@@ -315,7 +315,7 @@ class(merged_df$Gender)
 class(merged_df$Diagnosis)
 
 merged_df <- merged_df %>%
-  mutate(Gender = ifelse(Gender == 1, "F", ifelse(Gender == 2, "M", Gender)))
+  mutate(Gender = ifelse(Gender == 1, "M", ifelse(Gender == 2, "F", Gender)))
 
 merged_df <- merged_df %>%
   mutate(Diagnosis = ifelse(Diagnosis == "A", "ASD", ifelse(Diagnosis == "B", "TD", Diagnosis)))
