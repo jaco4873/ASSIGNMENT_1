@@ -1,0 +1,54 @@
+---
+title: "new_assignment"
+author: "Me"
+date: "2023-09-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+install.packages("tidyverse")
+library(tidyverse)
+library(stringr)
+library(dplyr)
+```
+
+##Loading the datasets
+```{r}
+
+setwd("C:/UNI/Sem 3/ASSIGNMENT_1/NewAssign1/data")
+Demo_DF <- read.csv("demo_train.csv")
+LU_DF <- read.csv("LU_train.csv")
+Token_DF <- read.csv("token_train.csv")
+
+```
+Identifying indifferences between datasets
+```{r}
+
+head(Demo_DF)
+head(LU_DF)
+head(Token_DF)
+```
+Demo_DF has a different variable for "Visit"
+It seems more reasonable to keep Visit as a integer, hence a logical change would be to transform all other "Visitx." in LU_DF and Token_DF 
+
+We have the same reverse problem for the identification of participants (Child.ID/SUBJ)
+As it is written Child.ID in Demo_DF and SUBJ in the others. 
+Here it seems more reasonable to change the names of the others to Child.ID since its a more specific name.
+```{r}
+TransformVisit = function(dataDF){
+    dataDF$VISIT <- gsub("(?i)visit", "", dataDF$VISIT)
+dataDF$VISIT <- as.integer(dataDF$VISIT)
+
+    
+
+     head(dataDF)   
+}
+
+TransformVisit(LU_DF)
+TransformVisit(Token_DF)
+
+```
+
+
