@@ -16,16 +16,15 @@ library(dplyr)
 
 ##Loading the datasets
 ```{r}
+setwd("data")
 
-setwd("C:/UNI/Sem 3/ASSIGNMENT_1/NewAssign1/data")
 Demo_DF <- read.csv("demo_train.csv")
 LU_DF <- read.csv("LU_train.csv")
 Token_DF <- read.csv("token_train.csv")
 
 ```
-Identifying indifferences between datasets
+## Identifying indifferences between datasets
 ```{r}
-
 head(Demo_DF)
 head(LU_DF)
 head(Token_DF)
@@ -41,14 +40,55 @@ TransformVisit = function(dataDF){
     dataDF$VISIT <- gsub("(?i)visit", "", dataDF$VISIT)
 dataDF$VISIT <- as.integer(dataDF$VISIT)
 
-    
-
+colnames(dataDF)[colnames(dataDF) == "SUBJ"] ="Child.ID"
      head(dataDF)   
 }
 
+head(Demo_DF)
 TransformVisit(LU_DF)
 TransformVisit(Token_DF)
 
+```
+## Selection
+We will now use another function to make sure only the relevant variables are used.
+We use a list and functions to complete this.
+```{r}
+RelevantList = c("Child.ID",
+"Visit",
+"Diagnosis",
+"Ethnicity",
+"Gender",
+"Age",
+"ADOS",
+"MullenRaw",
+"ExpressiveLangRaw",
+"Socialization",
+"MOT_MLU",
+"CHI_MLU",
+"types_MOT",
+"types_CHI",
+"tokens_MOT",
+"tokens_CHI")
+
+OrderControl = function(dataDF){
+  TempList = character()
+  for(ColN in RelevantList)
+  {
+    
+    if(ColN %in% colnames(dataDF))
+    {
+      
+      TempList <- c(TempList, ColN)
+    }
+  }
+  TempList
+  dataDF = dataDF %>% select(TempList) 
+  head(dataDF)
+}
+
+OrderControl(Demo_DF)
+OrderControl(LU_DF)
+OrderControl(Token_DF)
 ```
 
 
