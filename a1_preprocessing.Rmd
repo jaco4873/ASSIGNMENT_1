@@ -73,9 +73,24 @@ If you have created a Rstudio project for this assignment, the working directory
 
 ```{r setup}
 ### Write your code here
-
+# install.packages('tidyverse')
+# install.packages('readr')
+# install.packages('janitor')
+# install.packages('dlookr')
+# install.packages('stringr')
 
 ```
+
+
+```{r}
+library(tidyverse)
+library(readr)
+library(janitor)
+library(dlookr)
+library(stringr)
+```
+
+
 
 Load the following three data sets, after downloading them from dropbox and saving them in your working directory:
 
@@ -85,6 +100,9 @@ Load the following three data sets, after downloading them from dropbox and savi
 
 ```{r import_datasets, message = FALSE}
 ### Write your code here
+demo_data <- read_csv("demo_train.csv")
+ut_length <- read_csv("LU_train.csv")
+word_data <- read_csv("token_train.csv")
 
 
 ```
@@ -95,6 +113,11 @@ Using various visualisation and aggregation procedures, explore these data sets 
 - the same variables might report the values in different ways (e.g. participant and visit IDs)
 
 Given this, it is important to make sure that all the relevant variables are identical in both name, type, and possible values.
+
+```{r}
+#diagnose_report(demo_data) - didn't understand how it works
+```
+
 
 **1. Renaming variables**
 
@@ -113,8 +136,23 @@ Many different procedures can be used here, and unless you have to deal with gig
 ```{r rename_variables}
 ### Write your code here
 
+ut_length <- ut_length %>% 
+  rename(visit = VISIT)
+
+ut_length <- ut_length %>% 
+  rename(child_id = SUBJ) 
+
+word_data <- word_data %>% 
+  rename(visit = VISIT,
+         child_id = SUBJ)
+
+demo_data <- demo_data %>% 
+  rename(child_id = Child.ID, 
+         visit = Visit)
 
 ```
+
+
 
 **2. Renaming values**
 
@@ -122,7 +160,23 @@ Find a way to homogenize the way "visit" is reported amongst the different datas
 
 
 ```{r extract_digits}
-### Write your code here
+
+##For DF2
+ut_length <- clean_names(ut_length) #clean names to see the difference is it makes #it doesn't??
+
+ut_length <- as_tibble(ut_length) #converting to a tibble from a list #unnecessary?
+
+ut_length$visit <- str_extract(ut_length$visit, '\\d') #extracting the number
+
+# DF 3
+
+word_data$visit <- str_extract(word_data$visit, '\\d')
+
+
+#setting to numeric
+
+ut_length$visit <- as.numeric(ut_length$visit)
+word_data$visit <- as.numeric(word_data$visit)
 
 
 ```
@@ -133,7 +187,36 @@ A similar task needs to be done regarding the value names of the Child.ID variab
 
 
 ```{r remove_points}
-### Write your code here
+#Removing all dots for DF1
+demo_data$child_id <- str_replace_all(demo_data$child_id, "\\.", "")
+```
+
+
+```{r functions that don't work}
+#Trial 1 to make a function - doesn't work
+
+dot_remove = function (demo_data){
+  demo_data$child_id <- str_replace_all(demo_data$child_id, "\\.", "")
+}
+
+dot_remove(ut_length)
+# 
+# # Trial 2 - also doesn't work :c
+ df=NULL
+ dot_function <- function (df) {
+   df$child_id <- str_replace_all(df$child_id, "\\.", "")
+
+ }
+
+dot_function(ut_length)
+```
+
+
+```{r remove_points}
+#Removing the dots for DF2 and DF3
+
+ut_length$child_id <- str_replace_all(ut_length$child_id, "\\.", "")
+word_data$child_id <- str_replace_all(word_data$child_id, "\\.", "")
 
 
 ```
@@ -155,8 +238,10 @@ The variables of relevance here are the following:
 * MullenRaw, 
 * ExpressiveLangRaw, 
 * Socialization
+
 * MOT_MLU, 
 * CHI_MLU, 
+
 * types_MOT, 
 * types_CHI, 
 * tokens_MOT, 
@@ -176,7 +261,31 @@ Feel free to rename the variables into something you think is more intuitive (i.
 
 ```{r rename_selected_variables}
 ### Write your code here
+sub_demo_df <- subset(demo_data, select =c ('child_id', 
+                                              'visit', 
+                                              'Diagnosis', 
+                                              'Ethnicity', 
+                                              'Gender', 
+                                              'Age', 
+                                              'ADOS',  
+                                              'MullenRaw', 
+                                              'ExpressiveLangRaw', 
+                                              'Socialization'))
+sub_demo_df
 
+#DF 2
+sub_ut_df <- subset(ut_length, select =c ('child_id', 
+                                              'visit','mot_mlu', 'chi_mlu'))
+head(sub_ut_df)
+
+#DF3
+
+sub_word_df <- subset(word_data, select =c ('child_id', 
+                                              'visit', 'types_MOT', 
+                                              'types_CHI', 
+                                              'tokens_MOT', 
+                                              'tokens_CHI'))
+head(sub_word_df)
 
 ```
 
@@ -190,7 +299,19 @@ It is important here to check if merging the data sets:
 - has resulted in the creation of NAs within the merged data set. If this is so, it is important to understand why these NAs were created (e.g. some measures were not taken at all visits, some recordings were lost or permission to use was withdrawn).
 
 ```{r merge_data}
-### Write your code here
+### Join DF1 and DF2
+
+#with lef_join - 372 rows
+sub_merge <- left_join(sub_demo_df, sub_ut_df, by = c("child_id", "visit"))
+sub_merge
+#with merge - 352 rows
+sub_merge2 <- merge(sub_demo_df, sub_ut_df, by= c("child_id", "visit"))
+sub_merge2
+
+
+###Join sub_merge and DF3 
+
+final_merge <- left_join(sub_merge, sub_word_df, by = c("child_id", "visit")) #372 rows
 
 
 ```
@@ -207,9 +328,9 @@ A possible way to do so:
 
 
 ```{r add_first_visit_variables}
-### Write your code here
+### Here I just remove all the rows where visit is not 1
 
-
+final_df <- filter(final_merge, final_merge$visit== '1')
   
 ```
 
@@ -218,7 +339,20 @@ A possible way to do so:
 An important part of data cleaning is making sure both variable names and value allow for easy and intuitive analysis and interpretation. For example, the different values for the categorical variable *gender* have been encoded to '1' and '2', but these numbers are useless to anyone who doesn't have the proper encoding dictionary, which maps each number to the corresponding category, namely 'male' or 'female'. In the following code chunk, resolve this ambiguity by reversing the encoding of the gender variable, so that 1 and 2 are changed to F and M respectively. In the same vein, transform the 'Diagnosis' variable so that 'A's and 'B's are reverted back to ASD (Autism Spectrum Disorder) and TD (typically developing) respectively.
 
 ```{r revert_encoding}
-### Write your code here
+
+#Replacing Gender column with the one where 1 is f and 2 is M using mutate and str_replace_all
+
+final_df <- final_df %>% 
+    mutate(Gender = str_replace_all(Gender, "1", "F")) %>% 
+    mutate(Gender = str_replace_all(Gender, "2", "M")) 
+
+#Doing the same for diagnosis
+final_df <- final_df %>% 
+    mutate(Diagnosis = str_replace_all(Diagnosis, "A", "ASD")) %>% 
+    mutate(Diagnosis = str_replace_all(Diagnosis, "B", "TD"))
+  
+  
+
 
 
 ```
@@ -229,9 +363,42 @@ Finally, save the cleaned data in Comma-Separated Values (CSV) format, under a n
 
 ```{r save_changes}
 ### Write your code here
-
+write.csv(final_df, "/Users/ulya/Documents/METHODS_3/ASSIGNMENT_1/final_data.csv")
 
 ```
+
+
+```{r}
+
+
+#Going through steps 6-9 without removing all the rows where visit is not 1
+
+#6 # Remove all values in relevant columns where visit != 1 - stolen from Jacob
+final_large <- final_merge %>%
+  mutate(across(7:10, ~ifelse(visit != 1, NA, .)))
+```
+
+
+```{r}
+#7
+
+#Replacing Gender column with the one where 1 is f and 2 is M using mutate and str_replace_all
+
+final_large <- final_large %>% 
+    mutate(Gender = str_replace_all(Gender, "1", "F")) %>% 
+    mutate(Gender = str_replace_all(Gender, "2", "M")) 
+
+#Doing the same for diagnosis
+final_large_df <- final_large %>% 
+    mutate(Diagnosis = str_replace_all(Diagnosis, "A", "ASD")) %>% 
+    mutate(Diagnosis = str_replace_all(Diagnosis, "B", "TD"))
+```
+
+```{r}
+#8
+write.csv(final_large_df, "/Users/ulya/Documents/METHODS_3/ASSIGNMENT_1/final_large_df.csv")
+```
+
 
 Your data is now ready for the next assignment!
 
